@@ -1,6 +1,6 @@
 #![deny(missing_docs)]
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, SecondsFormat, Utc};
 use core::fmt::Debug;
 use std::collections::BTreeMap;
 
@@ -220,6 +220,14 @@ impl Transformer {
                 }),
                 // RFC3339 is the default serialization of a timestamp.
                 TimestampFormat::Rfc3339 => (),
+                TimestampFormat::Rfc3339S => self
+                    .format_timestamps(log, |ts| ts.to_rfc3339_opts(SecondsFormat::Secs, true)),
+                TimestampFormat::Rfc3339Ms => self
+                    .format_timestamps(log, |ts| ts.to_rfc3339_opts(SecondsFormat::Millis, true)),
+                TimestampFormat::Rfc3339Us => self
+                    .format_timestamps(log, |ts| ts.to_rfc3339_opts(SecondsFormat::Micros, true)),
+                TimestampFormat::Rfc3339Ns => self
+                    .format_timestamps(log, |ts| ts.to_rfc3339_opts(SecondsFormat::Nanos, true)),
             }
         }
     }
@@ -249,6 +257,18 @@ pub enum TimestampFormat {
 
     /// Represent the timestamp as a RFC 3339 timestamp.
     Rfc3339,
+
+    /// Represent the timestamp as a RFC 3339 timestamp w/ 0 subsecond digits
+    Rfc3339S,
+
+    /// Represent the timestamp as a RFC 3339 timestamp w/ 3 subsecond digits
+    Rfc3339Ms,
+
+    /// Represent the timestamp as a RFC 3339 timestamp w/ 6 subsecond digits
+    Rfc3339Us,
+
+    /// Represent the timestamp as a RFC 3339 timestamp w/ 9 subsecond digits
+    Rfc3339Ns,
 
     /// Represent the timestamp as a Unix timestamp in milliseconds.
     UnixMs,
@@ -386,6 +406,23 @@ mod tests {
             .insert("another", Value::Timestamp(*timestamp));
 
         let cases = [
+            ("rfc3339", Value::from(timestamp.clone())),
+            (
+                "rfc3339_s",
+                Value::from(timestamp.format("%Y-%m-%dT%H:%M:%SZ").to_string()),
+            ),
+            (
+                "rfc3339_ms",
+                Value::from(timestamp.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()),
+            ),
+            (
+                "rfc3339_us",
+                Value::from(timestamp.format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string()),
+            ),
+            (
+                "rfc3339_ns",
+                Value::from(timestamp.format("%Y-%m-%dT%H:%M:%S%.9fZ").to_string()),
+            ),
             ("unix", Value::from(timestamp.timestamp())),
             ("unix_ms", Value::from(timestamp.timestamp_millis())),
             ("unix_us", Value::from(timestamp.timestamp_micros())),
